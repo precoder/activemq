@@ -489,6 +489,7 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
             Runnable run = new Runnable() {
                 @Override
                 public void run() {
+                    LOG.info("ActiveMQ Transport Server Thread Handler run method starting.");
                     try {
                         while (!isStopped() && !isStopping()) {
                             Socket sock = socketQueue.poll(1, TimeUnit.SECONDS);
@@ -501,6 +502,8 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
                                     } else if (!isStopped()) {
                                         LOG.warn("Unexpected error thrown during accept handling: ", thrown);
                                         onAcceptError(new Exception(thrown));
+                                    } else {
+                                        LOG.error("socketQueue get an unexpected error:" + thrown.getMessage(), thrown);
                                     }
                                 }
                             }
@@ -510,7 +513,14 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
                         if (!isStopped() || !isStopping()) {
                             LOG.info("socketQueue interrupted - stopping");
                             onAcceptError(e);
+                        } else {
+                            LOG.error("socketQueue interrupted - without stopping:" + e.getMessage(), e);
+                            onAcceptError(e);
                         }
+                    } catch(Throwable thrown) {
+                        LOG.error("socketQueue get an unexpected error:" + thrown.getMessage(), thrown);
+                    } finally {
+                        LOG.info("ActiveMQ Transport Server Thread Handler run method stopped.");
                     }
                 }
             };
