@@ -344,6 +344,8 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
 
     private void doRunWithServerSocketChannel(final ServerSocketChannel channel) {
         try {
+    		LOG.info("doRunWithServerSocketChannel called.");
+
             channel.configureBlocking(false);
             final Selector selector = Selector.open();
 
@@ -420,6 +422,8 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
     }
 
 	private void doRunWithServerSocket(final ServerSocket serverSocket) {
+		LOG.info("doRunWithServerSocket called.");
+
 		while (!isStopped()) {
 			Socket socket = null;
 			try {
@@ -447,8 +451,6 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
 			} catch (Throwable thrown) {
 				LOG.error("doRunWithServerSocket get an unexpected error:" + thrown.getMessage(), thrown);
 				throw thrown;
-			} finally {
-				LOG.info("doRunWithServerSocket run method stopped with exception.");
 			}
 		}
 		LOG.info("doRunWithServerSocket stoppped. isStopped:" + isStopped());
