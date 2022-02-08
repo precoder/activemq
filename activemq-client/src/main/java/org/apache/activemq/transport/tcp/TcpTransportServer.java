@@ -387,9 +387,9 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
                             }
 
                         } catch (SocketTimeoutException ste) {
-                            // expect this to happen
+                            LOG.error("doRunWithServerSocketChannel SocketTimeoutException:" + ste.getMessage(), ste);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                        	LOG.error("doRunWithServerSocketChannel Exception:" + e.getMessage(), e);
                             if (!isStopping()) {
                                 onAcceptError(e);
                             } else if (!isStopped()) {
@@ -401,6 +401,8 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
                     i.remove();
                 }
             }
+    		LOG.info("doRunWithServerSocket stoppped. isStopped:" + isStopped());
+
         } catch (IOException ex) {
             if (!isStopping()) {
                 onAcceptError(ex);
@@ -408,37 +410,49 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
                 LOG.warn("run()", ex);
                 onAcceptError(ex);
             }
+        } catch(Throwable thrown) {
+            LOG.error("doRunWithServerSocketChannel get an unexpected error:" + thrown.getMessage(), thrown);
+            throw thrown;
+        } finally {
+            LOG.info("doRunWithServerSocketChannel run method stopped.");
         }
+        
     }
 
-    private void doRunWithServerSocket(final ServerSocket serverSocket) {
-        while (!isStopped()) {
-            Socket socket = null;
-            try {
-                socket = serverSocket.accept();
-                if (socket != null) {
-                    if (isStopped() || getAcceptListener() == null) {
-                        socket.close();
-                    } else {
-                        if (useQueueForAccept) {
-                            socketQueue.put(socket);
-                        } else {
-                            handleSocket(socket);
-                        }
-                    }
-                }
-            } catch (SocketTimeoutException ste) {
-                // expect this to happen
-            } catch (Exception e) {
-                if (!isStopping()) {
-                    onAcceptError(e);
-                } else if (!isStopped()) {
-                    LOG.warn("run()", e);
-                    onAcceptError(e);
-                }
-            }
-        }
-    }
+	private void doRunWithServerSocket(final ServerSocket serverSocket) {
+		while (!isStopped()) {
+			Socket socket = null;
+			try {
+				socket = serverSocket.accept();
+				if (socket != null) {
+					if (isStopped() || getAcceptListener() == null) {
+						socket.close();
+					} else {
+						if (useQueueForAccept) {
+							socketQueue.put(socket);
+						} else {
+							handleSocket(socket);
+						}
+					}
+				}
+			} catch (SocketTimeoutException ste) {
+				LOG.error("doRunWithServerSocket SocketTimeoutException:" + ste.getMessage(), ste);
+			} catch (Exception e) {
+				if (!isStopping()) {
+					onAcceptError(e);
+				} else if (!isStopped()) {
+					LOG.warn("run()", e);
+					onAcceptError(e);
+				}
+			} catch (Throwable thrown) {
+				LOG.error("doRunWithServerSocket get an unexpected error:" + thrown.getMessage(), thrown);
+				throw thrown;
+			} finally {
+				LOG.info("doRunWithServerSocket run method stopped with exception.");
+			}
+		}
+		LOG.info("doRunWithServerSocket stoppped. isStopped:" + isStopped());
+	}
 
     /**
      * Allow derived classes to override the Transport implementation that this transport server creates.
@@ -519,6 +533,7 @@ public class TcpTransportServer extends TransportServerThreadSupport implements 
                         }
                     } catch(Throwable thrown) {
                         LOG.error("socketQueue get an unexpected error:" + thrown.getMessage(), thrown);
+                        throw thrown;
                     } finally {
                         LOG.info("ActiveMQ Transport Server Thread Handler run method stopped.");
                     }
